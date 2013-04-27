@@ -10,7 +10,7 @@
   padding: 0;
 }
 body {
-  background: #000;
+  background: #000 url("images/star.jpg") fixed;
   font: 300 14px "Helvetica Neue", "Helvetica", Arial, sans-serif;
   text-shadow: 0 0 1px transparent;
 }
@@ -54,12 +54,12 @@ strong {
   z-index: 0;
 }
 #header {
-  height: 70px;
-  padding: 50px 0;
+  height: 190px;
+  padding: 50px 0 20px 0;
 }
 #header nav {
   font: 1.5em "Pontano Sans", Helvetica Neue, Helvetica, Arial, sans-serif;
-  line-height: 70px;
+  line-height: 190px;
 }
 #header nav ul {
   list-style: none;
@@ -870,4 +870,48 @@ pre .clojure .title {
 }
 pre .deletion {
   color: #dc322f;
+}
+.logo {
+  padding-top: 20px;
+}
+.logo a,
+.logo img {
+  display: inline-block;
+  width: 180px;
+  height: 180px;
+  overflow: hidden;
+  -webkit-border-radius: 180px;
+  border-radius: 180px;
+}
+.logo img {
+  -webkit-animation-name: Rotate;
+  -moz-animation-name: Rotate;
+  -o-animation-name: Rotate;
+  -ms-animation-name: Rotate;
+  animation-name: Rotate;
+  -webkit-animation-duration: 4.5s;
+  -moz-animation-duration: 4.5s;
+  -o-animation-duration: 4.5s;
+  -ms-animation-duration: 4.5s;
+  animation-duration: 4.5s;
+  -webkit-transition-timing-function: linear;
+  -moz-transition-timing-function: linear;
+  -o-transition-timing-function: linear;
+  -ms-transition-timing-function: linear;
+  transition-timing-function: linear;
+  -webkit-animation-delay: 3s;
+  -moz-animation-delay: 3s;
+  -o-animation-delay: 3s;
+  -ms-animation-delay: 3s;
+  animation-delay: 3s;
+  -webkit-animation-iteration-count: infinite;
+  -moz-animation-iteration-count: infinite;
+  -o-animation-iteration-count: infinite;
+  -ms-animation-iteration-count: infinite;
+  animation-iteration-count: infinite;
+  -webkit-animation-direction: alternate;
+  -moz-animation-direction: alternate;
+  -o-animation-direction: alternate;
+  -ms-animation-direction: alternate;
+  animation-direction: alternate;
 }

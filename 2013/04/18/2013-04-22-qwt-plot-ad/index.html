@@ -1,0 +1,598 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>用qwt绘制AD波形 | qt | 出道码农的自留地</title>
+  <meta name="author" content="cdlxkill">
+
+  
+  <meta name="description" content="像没有人看一样跳舞，像不需要钱一样工作，像没有受过伤一样爱，像就要死那样活着">
+  
+  
+
+  <link rel="alternate" href="/atom.xml" title="出道码农的自留地" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-40222869-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+<body>
+  <header id="header" class="inner"><nav>
+  <ul>
+    
+      <li><a href="/">主页</a></li>      
+    
+      <li><a href="/archives">归档</a></li>      
+    
+  </ul>
+</nav></header>
+  <div id="content" class="inner"><article class="post">
+  
+  <header>
+    
+  
+    <h1 class="title">用qwt绘制AD波形</h1>
+  
+
+    <time datetime="2013-04-18T06:35:22.000Z">
+  <span class="day">18</span><span class="month">Apr</span>
+</time>
+  </header>
+  <div class="entry-content">
+    
+      <h2>引子</h2>
+<p>项目终于快完成了，现在开始整理下代码，总结下，今天先分享下关于使用如何用QWT绘制波形，先把图给贴出来。
+<img src="/img/qwt/qwt-ad-res.jpg" alt="Alt text" title="qwt绘图结果">
+<a name="more"></a></p>
+<h2>关于QWT</h2>
+<p> 以下源于百度百科“QWT全称是Qt Widgets for Technical Applications，是一个基于LGPL版权协议的开源项目，可生成各种统计图。它为具有技术专业背景的程序提供GUI组件和一组实用类，其目标是以基于2D方式的窗体部件来显示数据， 数据源以数值，数组或一组浮点数等方式提供，输出方式可以是Curves（曲线），Slider（滚动条），Dials（圆盘），Compasses（仪表盘）等等。该工具库基于Qt开发，所以也继承了Qt的跨平台特性。”
+我使用的是qwt-6.0.0-rc5，可以到<a href="http://qwt.sourceforge.net/">官网下载</a>，具体的安装和集成过程可以参照<a href="http://www.cuteqt.com/blog/?p=994">这个贴子</a>。</p>
+<h2>源码</h2>
+<h3>AdPlot.h</h3>
+<figure class="highlight lang-c"><figcaption><span>AdPlot.h ++</span></figcaption><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+</pre></td><td class="code"><pre>
+<span class="preprocessor">#ifndef ADPLOT_H</span>
+<span class="preprocessor">#define ADPLOT_H</span>
+<span class="preprocessor">#include &lt;QWidget&gt;</span>
+<span class="preprocessor">#include &lt;qwt_plot_curve.h&gt;</span>
+<span class="preprocessor">#include &lt;qfile.h&gt;</span>
+<span class="preprocessor">#include &lt;qwt_plot_magnifier.h&gt;</span>
+<span class="class"><span class="keyword">namespace</span> <span class="title">Ui</span> 
+{</span>
+    <span class="class"><span class="keyword">class</span> <span class="title">AdPlot</span>;
+}
+<span class="title">class</span> <span class="title">AdPlot</span> : <span class="title">public</span> <span class="title">QWidget</span>
+{</span>
+Q_OBJECT
+<span class="keyword">public</span>:
+    explicit AdPlot(QWidget *parent = <span class="number">0</span>);
+    <span class="comment">//要绘制的AD数据，X-时间，Y-电压值</span>
+    <span class="keyword">void</span> readAdData(QVector&lt; <span class="keyword">double</span> &gt; &amp;xData,
+    QVector&lt; <span class="keyword">double</span> &gt; &amp;yData);
+    <span class="keyword">void</span> setTitleString(QString title);
+    <span class="keyword">void</span> setTimerStop();
+    ~AdPlot();
+<span class="keyword">public</span> slots:
+    <span class="comment">//节点打开的AD数据的文件名</span>
+    <span class="keyword">void</span> setFileName(QString filename);
+    <span class="comment">//绘制AD数据</span>
+    <span class="keyword">void</span> plotAdCurve();
+<span class="keyword">private</span>:
+    Ui::AdPlot *ui;
+    QwtPlotCurve *p_adplot;
+    QVector&lt; <span class="keyword">double</span> &gt; xData;
+    QVector&lt; <span class="keyword">double</span> &gt; yData;
+    QFile *localFile;
+    <span class="comment">//文件偏移量</span>
+    qint64 offset;
+    <span class="keyword">double</span> time;
+    QString m_filename;
+    QwtPlotMagnifier *PM;
+    <span class="comment">//当前X轴最大的范围</span>
+    <span class="keyword">int</span> xMaxScale;
+    QTimer *adPlotTimer;
+    QString m_title;
+    };
+<span class="preprocessor">#endif // ADPLOT_H</span>
+</pre></td></tr></table></figure>
+
+<p>头文件没什么好说的，说明一下offset这个变量，它是用来保存当前的读取到的文件位置，而xData和yData分别储存时间和电压值。</p>
+<h3>AdPlot.cpp</h3>
+<figure class="highlight lang-c"><figcaption><span>AdPlot.cpp ++</span></figcaption><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+</pre></td><td class="code"><pre>
+<span class="comment">#include "adplot.h"</span>
+<span class="comment">#include "ui_adplot.h"</span>
+<span class="comment">#include &lt;QtGui/QApplication&gt;</span>
+<span class="comment">#include &lt;qapplication.h&gt;</span>
+<span class="comment">#include &lt;qlayout.h&gt;</span>
+<span class="comment">#include &lt;qlabel.h&gt;</span>
+<span class="comment">#include &lt;qpainter.h&gt;</span>
+<span class="comment">#include &lt;qwt_plot_layout.h&gt;</span>
+<span class="comment">#include &lt;qwt_plot_curve.h&gt;</span>
+<span class="comment">#include &lt;qwt_scale_draw.h&gt;</span>
+<span class="comment">#include &lt;qwt_scale_widget.h&gt;</span>
+<span class="comment">#include &lt;qwt_legend.h&gt;</span>
+<span class="comment">#include &lt;qwt_legend_item.h&gt;</span>
+<span class="comment">#include &lt;QTime&gt;</span>
+<span class="comment">#include &lt;qtimer.h&gt;</span>
+<span class="comment">#include &lt;QMessageBox&gt;</span>
+<span class="comment">#include &lt;qcolor.h&gt;</span>
+<span class="comment">#include &lt;qwt_plot_zoomer.h&gt;</span>
+class TimeScaleDraw: public QwtScaleDraw
+{
+public:
+    TimeScaleDraw(const QTime &amp;base):
+    baseTime(base)
+    {
+    }
+    virtual QwtText label(double v) const
+    {
+        QTime upTime = baseTime.addSecs((<span class="keyword">int</span>)v);
+        <span class="keyword">return</span> upTime.toString();
+    }
+
+private:
+    QTime baseTime;
+};
+
+
+AdPlot::AdPlot(QWidget <span class="variable">*parent</span>) :
+QWidget(parent),
+ui(new Ui::AdPlot)
+{
+    ui-&gt;setupUi(this);
+    ui-&gt;qwtPlot-&gt;setAutoReplot(false);
+    QTime curTime;
+    curTime = curTime.currentTime();
+    QwtLegend <span class="variable">*legend</span> = new QwtLegend;
+    legend-&gt;setItemMode(QwtLegend::CheckableItem);
+    <span class="regexp">//ui</span>-&gt;qwtPlot-&gt;insertLegend(legend, QwtPlot::RightLegend);
+    ui-&gt;qwtPlot-&gt;setAxisTitle(QwtPlot::xBottom, <span class="string">" System Uptime [h:m:s]"</span>);
+    ui-&gt;qwtPlot-&gt;setAxisScaleDraw(QwtPlot::xBottom,
+    new TimeScaleDraw(curTime));
+    ui-&gt;qwtPlot-&gt;setAxisScale(QwtPlot::xBottom, <span class="number">0</span>, xMaxScale = <span class="number">5</span>);
+    ui-&gt;qwtPlot-&gt;setAxisLabelAlignment(QwtPlot::xBottom, Qt::AlignLeft | Qt::AlignBottom);
+
+    QwtScaleWidget <span class="variable">*scaleWidget</span> = ui-&gt;qwtPlot-&gt;axisWidget(QwtPlot::xBottom);
+    const <span class="keyword">int</span> fmh = QFontMetrics(scaleWidget-&gt;font()).height();
+    scaleWidget-&gt;setMinBorderDist(<span class="number">0</span>, fmh / <span class="number">2</span>);
+
+    ui-&gt;qwtPlot-&gt;setAxisTitle(QwtPlot::yLeft, <span class="string">"V"</span>);
+    ui-&gt;qwtPlot-&gt;setAxisScale(QwtPlot::yLeft, <span class="number">0</span>, <span class="number">3</span>);
+    p_adplot = new QwtPlotCurve();
+    QColor c = Qt::red;
+    c.setAlpha(<span class="number">150</span>);
+    p_adplot-&gt;setPen(c);
+
+    p_adplot-&gt;attach(ui-&gt;qwtPlot);
+    <span class="regexp">//</span>PM = new QwtPlotMagnifier(ui-&gt;qwtPlot-&gt;canvas());
+    QwtPlotZoomer* zoomer = new QwtPlotZoomer( ui-&gt;qwtPlot-&gt;canvas() );
+    zoomer-&gt;setRubberBandPen( QColor( Qt::black ) );
+    zoomer-&gt;setTrackerPen( QColor( Qt::black ) );
+    zoomer-&gt;setMousePattern(QwtEventPattern::MouseSelect2,Qt::RightButton, Qt::ControlModifier );
+    zoomer-&gt;setMousePattern(QwtEventPattern::MouseSelect3,Qt::RightButton );
+    <span class="keyword">time</span> = <span class="number">0</span>.<span class="number">0</span>;
+    adPlotTimer = new QTimer();
+    adPlotTimer-&gt;start(<span class="number">100</span>);
+    <span class="keyword">connect</span>(adPlotTimer, SIGNAL(timeout()),
+    this, SLOT(plotAdCurve()));
+    offset = <span class="number">0</span>;
+}
+
+AdPlot::~AdPlot()
+{
+    <span class="keyword">delete</span> ui;
+}
+
+void AdPlot::readAdData(QVector&lt;double&gt; &amp;xData, QVector&lt;double&gt; &amp;yData)
+{
+    <span class="keyword">if</span>(!m_filename.isEmpty())
+    {
+        localFile = new QFile(m_filename); <span class="regexp">//</span>用户端的IP地址+端口号作为文件名
+        <span class="keyword">if</span> (!localFile-&gt;open(QFile::ReadOnly ))
+        {
+            QMessageBox::warning(<span class="number">0</span>, <span class="keyword">tr</span>(<span class="string">"应用程序"</span>),
+                <span class="keyword">tr</span>(<span class="string">"无法读取文件 <span class="variable">%1</span>:\n<span class="variable">%2</span>."</span>)
+                .arg(m_filename)
+                 .arg(localFile-&gt;errorString()));
+             <span class="keyword">return</span>;
+         }
+         QByteArray adData;
+         <span class="keyword">if</span> (!localFile-&gt;atEnd())
+         {
+             <span class="keyword">if</span> (offset == <span class="number">0</span>)
+             {
+                 adData = localFile-&gt;read(<span class="number">26</span>);
+                 qDebug()&lt;&lt;adData;
+                 offset += <span class="number">26</span>;
+                 adData.resize(<span class="number">0</span>);
+                 <span class="keyword">return</span>;
+             }
+         
+             <span class="keyword">if</span> (localFile-&gt;seek(offset))
+             {     
+                 adData = localFile-&gt;read(<span class="number">32</span><span class="variable">*2</span>);
+                 <span class="keyword">if</span> (adData.count() == <span class="number">32</span><span class="variable">*2</span>)
+                 {
+                     <span class="keyword">for</span> (<span class="keyword">int</span> count=<span class="number">0</span>; count&lt;<span class="number">32</span>; count++)
+                     {
+                         char lowbits = adData.at(count<span class="variable">*2</span>);
+                         char highbits = adData.at(count<span class="variable">*2</span> + <span class="number">1</span>);
+                         short temp = lowbits+highbits<span class="variable">*256</span>;
+                         yData.append(((float)temp)<span class="variable">*3300</span>/<span class="number">4096</span>/<span class="number">1000</span>);
+                         xData.append(<span class="keyword">time</span>);
+                         <span class="keyword">time</span> += <span class="number">0</span>.<span class="number">005</span>; <span class="regexp">//</span><span class="number">5</span>ms一个数据
+                     }
+                 offset += <span class="number">32</span><span class="variable">*2</span>;
+                 }
+             }
+         }
+     }
+}
+void AdPlot::plotAdCurve()
+{
+    readAdData(xData,yData);
+    p_adplot-&gt;setSamples(xData,yData);
+    <span class="keyword">if</span> (!xData.empty())
+    {
+        <span class="keyword">if</span> (xData.<span class="keyword">last</span>() &gt;= xMaxScale)
+        {
+            xMaxScale <span class="variable">*=</span> <span class="number">2</span>;
+            ui-&gt;qwtPlot-&gt;setAxisScale(QwtPlot::xBottom, <span class="number">0</span>, xMaxScale);
+        }
+    }
+    p_adplot-&gt;attach(ui-&gt;qwtPlot);
+    ui-&gt;qwtPlot-&gt;replot();
+    adPlotTimer-&gt;start(<span class="number">100</span>);     
+}
+     
+void AdPlot::setFileName(QString filename)
+{
+    m_filename = filename;
+}
+
+void AdPlot::setTitleString(QString title)
+{
+    m_title = title;
+    ui-&gt;qwtPlot-&gt;setTitle(m_title);
+}
+ 
+void AdPlot::setTimerStop()
+{
+    adPlotTimer-&gt;stop();
+}
+</pre></td></tr></table></figure>
+
+<h3>首先:</h3>
+<p>说一下TimeScaleDraw这个类,它继承了QwtScaleDraw的类,其实就是一个抽象的一个刻度类,具体的函数说明可以参考说明手册.
+ui界面里没什么东西,就一个qwtplot的控件.<img src="/img/qwt/qwtplot_ui.png" alt="qwtplot_ui" title="qwtplot_ui">。</p>
+<h3>接着初始化坐标轴:</h3>
+<ul>
+<li>void setAxisTitle (int axisId, const QString &amp;) 用来设置坐标轴名字,第一个参数是QWT定义的坐标轴ID,即yLeft,yRight,xBottom和xTop.</li>
+<li>void setAxisScaleDraw (int axisId, QwtScaleDraw *)用来设置坐标轴刻度,第一个参数同上,第二个参数就是我们刚才定义的TimeScaleDraw;</li>
+<li>void setAxisScale (int axisId, double min, double max, double step=0)是设置刻度的,第一个参数同上,第二参数是刻度的最小值,第三个参数是刻度的最大值,最后一个是步长.</li>
+</ul>
+<h3>然后定义一个曲线QwtPlotCurve:</h3>
+<p>QwtPlotCurve,它的功能就是输入一系列的X,Y的值,然后绘制出曲线,当然,曲线的color,style那些是可以自己设置的.</p>
+<h3>缩放曲线(PS:这点就体现了QWT的强大之处):</h3>
+<p>QwtPlotZoomer,简单的一个类,简单的只个设置就可以缩放曲线,谁用谁知道啊.</p>
+<h3>定时器完成曲线的重绘:</h3>
+<p>adPlotTimer = new QTimer();
+adPlotTimer-&gt;start(100);
+connect(adPlotTimer, SIGNAL(timeout()), this, SLOT(plotAdCurve()));因为所用的AD是400K的,算了一下,大概160ms以下就能满足了.</p>
+<h3>读取AD数据:</h3>
+<p>因为服务器接收到的AD数据是保存在文件中的,而且是实时保存(也就是将Client接收的数据保存到文件的同时将此文件中的数据绘制出来).所以设置了一个文件偏移量,而已此文件的前26字节是采集的时间信息,所以跳过.</p>
+<p>又因为用的是AD是12位的,Client采用一个short类型来保存数据,而已每次传输32个AD数据,所以在计算AD数据前要确保文件已经有了32个AD数据,即64字节的数据.</p>
+<h3>绘制AD数据:</h3>
+<p>void setSamples (const QVector&lt; double &gt; &amp;xData, const QVector&lt; double &gt; &amp;yData)完成数据的设置.
+此函数重点在于时间轴的拉长:</p>
+<p><figure class="highlight lang-c"><figcaption><span>++</span></figcaption><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre>
+<span class="keyword">if</span> (xData.<span class="keyword">last</span>() &gt;= xMaxScale)
+{
+    xMaxScale <span class="variable">*=</span> <span class="number">2</span>;
+    ui-&gt;qwtPlot-&gt;setAxisScale(QwtPlot::xBottom, <span class="number">0</span>, xMaxScale);
+}
+</pre></td></tr></table></figure></p>
+<h2>总结</h2>
+<p>qwt的确一个优秀的第三方库,使用也不复杂,而已有详细的文档说明,还有很多例子,不过都是英文的,慢慢看吧.</p>
+
+    
+    
+    <footer class="meta">
+      
+  <div class="cats">
+<a href="/categories/qt/">qt</a></div>
+
+      
+  <div class="tags">
+<a href="/tags/qwt/">qwt</a><a href="/tags/qt/">qt</a></div>
+
+      
+    </footer>
+    
+  </div>
+  
+<section id="comment">
+  <div id="disqus_thread" aria-live="polite">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+</article></div>
+  <footer id="footer" class="inner"><div class="social alignright">
+  
+  
+  
+  
+    <a class="twitter" href="http://twitter.com/cdlxkill" title="Twitter">Twitter</a>
+  
+  
+    <a class="github" href="https://github.com/cdlxkill" title="GitHub">GitHub</a>
+  
+  <a class="rss" href="/atom.xml" title="RSS">RSS</a>
+</div>
+<p>
+  
+  &copy; 2013 cdlxkill
+  
+</p>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'cdlxkill';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id="phasebeam">
+  <canvas></canvas>
+  <canvas></canvas>
+  <canvas></canvas>
+</div>
+<script src="/js/phasebeam.js"></script>
+</body>
+</html>
